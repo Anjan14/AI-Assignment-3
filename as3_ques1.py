@@ -15,10 +15,12 @@ num_episodes = 50000
 max_steps = 100    # per episode
 rewards = []
 
+# Q-table Initialization
+Q_table = np.zeros((env.observation_space.n, env.action_space.n))
 
-#your code
-def get_action():
-    pass
+# Define the get_action function
+def get_action(state):
+    return np.argmax(Q_table[state])
 
 for episode in range(num_episodes):
     state, _ = env.reset()
@@ -31,9 +33,20 @@ for episode in range(num_episodes):
         else:
             action = get_action(state)
 
-        # execute the action and find next state and reward
-        # your code
+        # Execute the action and get next state, reward
+        next_state, reward, done, truncated, _ = env.step(action)
+        total_rewards += reward
 
+        # Update Q-value
+        max_next_q = np.max(Q_table[next_state])
+        Q_table[state, action] += alpha * (reward + gamma * max_next_q - Q_table[state, action])
+
+        state = next_state
+
+        if done or truncated:
+            break
+
+    rewards.append(total_rewards)
     # Decay epsilon
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
 
