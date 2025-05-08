@@ -32,6 +32,7 @@ epsilon_decay = 0.995
 epsilon_min = 0.01
 num_episodes = 10000
 max_steps = 500
+rewards = []
 
 # Training loop
 for episode in range(num_episodes):
@@ -40,17 +41,38 @@ for episode in range(num_episodes):
     total_reward = 0
 
     for step in range(max_steps):
+        # Epsilon-greedy action selection
         if random.uniform(0, 1) < epsilon:
             action_idx = random.randint(0, n_actions - 1)
         else:
-            action_idx = None #your code
+            # Exploitation: Select action with highest Q-value
+            if state not in Q:
+                Q[state] = np.zeros(n_actions)
+            action_idx = np.argmax(Q[state])
 
         action = ACTIONS[action_idx]
         reward = env.act(action)
+        total_reward += reward  # Track cumulative reward
         next_state = discretize_state(game.getGameState())
 
-        #your code to update Q table
+        # Initialize states in Q-table if missing
+        if state not in Q:
+            Q[state] = np.zeros(n_actions)
+        if next_state not in Q:
+            Q[next_state] = np.zeros(n_actions)
 
+        # Q-learning update
+        current_q = Q[state][action_idx]
+        max_next_q = np.max(Q[next_state])
+        Q[state][action_idx] += alpha * (reward + gamma * max_next_q - current_q)
+
+        # Transition to next state
+        state = next_state
+
+        if env.game_over():
+            break
+
+    rewards.append(total_reward)  # Save episode reward
     # Decay exploration rate
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
 
